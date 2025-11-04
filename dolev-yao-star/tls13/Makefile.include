@@ -1,0 +1,23 @@
+# Include this Makefile when using the tls13 module to get a few variables set up
+FSTAR_INCLUDE_DIRS += $(DY_HOME)/tls13 $(DY_HOME)/communication_module
+
+SEND_LIB_FILES=Communication.MessageStructurePredicates Communication.UsagePredicates Communication.Sessions Communication.Preds Communication.CoreFunctions
+SEND_LIB_FST_FILES=$(addprefix $(DY_HOME)/communication_module/,$(addsuffix .fst,$(SEND_LIB_FILES)))
+SEND_LIB_CMX_FILES=$(addprefix ocaml-symbolic/,$(addsuffix .cmx,$(subst .,_,$(SEND_LIB_FILES))))
+
+LIB_FST_FILES += $(SEND_LIB_FST_FILES)
+LIB_CMX_FILES += $(SEND_LIB_CMX_FILES)
+
+TLS_LIB_FILES=TLS13.Messages TLS13.Sessions TLS13.Protocol TLS13.API
+TLS_LIB_FST_FILES=$(addprefix $(DY_HOME)/tls13/,$(addsuffix .fst,$(TLS_LIB_FILES)))
+TLS_LIB_CMX_FILES=$(addprefix ocaml-symbolic/,$(addsuffix .cmx,$(subst .,_,$(TLS_LIB_FILES))))
+
+LIB_FST_FILES += $(TLS_LIB_FST_FILES)
+LIB_CMX_FILES += $(TLS_LIB_CMX_FILES)
+
+SEND_LIB_FILES_AFTER_TLS=Communication.API Communication.Layer
+SEND_LIB_FST_FILES_AFTER_TLS=$(addprefix $(DY_HOME)/communication_module/,$(addsuffix .fst,$(SEND_LIB_FILES_AFTER_TLS)))
+SEND_LIB_CMX_FILES_AFTER_TLS=$(addprefix ocaml-symbolic/,$(addsuffix .cmx,$(subst .,_,$(SEND_LIB_FILES_AFTER_TLS))))
+
+LIB_FST_FILES += $(SEND_LIB_FST_FILES_AFTER_TLS)
+LIB_CMX_FILES += $(SEND_LIB_CMX_FILES_AFTER_TLS)

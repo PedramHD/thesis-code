@@ -1,0 +1,19 @@
+include ../Makefile.concrete
+
+FSTAR_INCLUDE_DIRS = $(DY_HOME) $(DY_HOME)/symbolic $(DY_HOME)/communication_module
+
+APP_BASE_FST_FILES=TLS13.Messages.fst TLS13.Sessions.fst
+APP_BASE_CMX_FILES=ocaml-concrete/TLS13_Messages.cmx ocaml-concrete/TLS13_Sessions.cmx
+
+APP_FST_FILES=TLS13.Protocol.fst TLS13.API.fst 
+APP_CMX_FILES=ocaml-concrete/TLS13_Protocol.cmx ocaml-concrete/TLS13_API.cmx 
+
+ALL_FST_FILES=$(LIB_BASE_FST_FILES) $(APP_BASE_FST_FILES) $(LIB_FST_FILES) $(APP_FST_FILES)
+ALL_CMX_FILES=$(LIB_BASE_CMX_FILES) $(APP_BASE_CMX_FILES) $(LIB_CMX_FILES) $(APP_CMX_FILES)
+
+extract: $(ALL_FST_FILES) $(ALL_CMX_FILES)
+test: $(ALL_FST_FILES) $(ALL_ML_FILES) $(ALL_CMX_FILES) ocaml-concrete/test.exe
+
+ocaml-concrete/test.exe: $(ALL_CMX_FILES)
+	$(OCAMLOPT) $(HACL_HOME)/ml/libhaclml.cmxa $^ -o $@
+

@@ -1,0 +1,10 @@
+# Include this Makefile when using the communication module to get a few variables set up
+# See the source routing Makefile for an example on how to use this.
+FSTAR_INCLUDE_DIRS += $(DY_HOME)/communication_module $(DY_HOME)/tls13
+
+COMMUNICATION_LIB_FILES=Communication.MessageStructurePredicates Communication.UsagePredicates Communication.Sessions Communication.Preds Communication.CryptoLib Communication.CoreFunctions Communication.API Communication.Layer
+COMMUNICATION_LIB_FST_FILES=$(addprefix $(DY_HOME)/communication_module/,$(addsuffix .fst,$(COMMUNICATION_LIB_FILES)))
+COMMUNICATION_LIB_CMX_FILES=$(addprefix ocaml-symbolic/,$(addsuffix .cmx,$(subst .,_,$(COMMUNICATION_LIB_FILES))))
+
+LIB_FST_FILES += $(COMMUNICATION_LIB_FST_FILES)
+LIB_CMX_FILES += $(COMMUNICATION_LIB_CMX_FILES)
