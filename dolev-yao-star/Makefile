@@ -1,6 +1,6 @@
 # Paths inside docker container
-FSTAR_HOME ?= /Users/abhishekbichhawat/Work/WebmodelStar/FStar
-DY_HOME ?= /Users/abhishekbichhawat/Work/WebmodelStar/dolev-yao-star
+FSTAR_HOME ?= /home/build/FStar
+DY_HOME ?= /home/build/dolev-yao-star
 
 CACHE_DIR     ?= $(DY_HOME)/.cache/symbolic
 HINT_DIR      ?= $(DY_HOME)/.hints/symbolic
