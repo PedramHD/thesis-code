@@ -25,8 +25,8 @@ let test_cases =
   assert(seq 1 == 1);
   assert(seq 2 == 8);
   assert(seq 3 == 15);
-  assert(arithmetic_sum (3) == 24);
-  assert(arithmetic_sum (5) == 75)
+  assert(arithmetic_sum 3 == 24);
+  assert(arithmetic_sum 5 == 75)
 
 
 val arithmetic_sequence_sum_lemma (n:nat{n>0}) :
@@ -52,7 +52,7 @@ let rec arithmetic_sequence_sum_lemma n
     assert(arithmetic_sum (n-1) = ((n-1) * (seq 1 + seq (n-1))) / 2);
     helper_lemma n;
     assert(2*(seq n) - seq 1 + n*seq (n-1) - seq (n-1) == n*seq n)
-    )
+  )
 
 
 let example_func (x:nat{x>0}) : (res:nat{res > 100 /\ res > x}) = x + 100
