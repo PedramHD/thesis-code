@@ -65,7 +65,13 @@ let new_session_number (#pr:R.preds) (p:principal) :
 val new_session: #pr:R.preds -> #i:timestamp -> p:principal -> si:nat -> vi:nat -> st:bytes ->
   R.LCrypto unit (pki pr)
   (requires fun t0 -> trace_len t0 == i /\ pr.R.trace_preds.R.session_st_inv i p si vi st)
-  (ensures fun t0 r t1 -> trace_len t1 == trace_len t0 + 1)
+  (ensures fun t0 r t1 -> trace_len t1 == trace_len t0 + 1 /\
+    (exists (state_vec:state_vec) (vvec:version_vec) (app_state:bytes). state_was_set_at (trace_len t0) p vvec state_vec /\
+        si < Seq.Base.length state_vec /\
+        state_vec.[si] == app_state /\
+        parse_session_st app_state == Success (APP st)
+    )
+  )
 
 val update_session: #pr:R.preds -> #i:timestamp -> p:principal -> si:nat -> vi:nat -> st:bytes ->
   R.LCrypto unit (pki pr)

@@ -211,7 +211,13 @@ val new_session:
   #pr:preds -> #i:timestamp -> p:principal -> si:nat -> vi:nat -> st:bytes ->
   LCrypto unit pr
   (requires fun t0 -> trace_len t0 == i /\ pr.trace_preds.session_st_inv i p si vi st)
-  (ensures fun t0 r t1 -> trace_len t1 == trace_len t0 + 1)
+  (ensures fun t0 r t1 ->
+    trace_len t1 == trace_len t0 + 1 /\
+    (exists (state_vec:state_vec) (vvec:version_vec). state_was_set_at (trace_len t0) p vvec state_vec /\
+        si < Seq.Base.length state_vec /\
+        state_vec.[si] == st
+    )
+  )
 
 val update_session:
   #pr:preds -> #i:timestamp -> p:principal -> si:nat -> vi:nat ->
