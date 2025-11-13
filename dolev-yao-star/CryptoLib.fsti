@@ -158,10 +158,6 @@ val g_rand_inj_lemma (i1 i2:nat) (l1 l2:label) (u1 u2:usage):
 /// the correct splitting point in the bytestring. This is currently done by storing the length of
 /// ``b1`` in ``lenlen`` bytes. This "header" is stored before the actual bytes, hence the naming
 /// "prefixed".
-///
-/// TODO this can be done much more elegantly without bothering the API user with ``lenlen``, just
-/// use some self-delimiting encoding to store the length (or other ways, e.g., sequences of
-/// sequences, ...).
 val concat_len_prefixed: lenlen:nat -> b1:bytes -> b2:bytes -> bytes
 val split_len_prefixed: lenlen:nat -> bytes -> result (bytes * bytes)
 val split_concat_len_prefixed_lemma: lenlen:nat -> b1:bytes -> b2:bytes ->
@@ -342,7 +338,7 @@ val inv_extract_inj_lemma (c1 c2:bytes) : Lemma (inv_extract c1 == inv_extract c
 val inv_extract_lemma: c:bytes ->
   Lemma (match inv_extract c with | Success (k, s) -> c == extract k s /\ term_depth k < term_depth c | Error e -> True)
 
-val expand: key:bytes -> info:bytes -> bytes // TODO DOC What is the second param? If it's info: What would that be used for? Probably only relevant for concrete?
+val expand: key:bytes -> info:bytes -> bytes
 val expand_inj_lemma (k1 k2 i1 i2:bytes) :
   Lemma (expand k1 i1 == expand k2 i2 ==> (k1 == k2 /\ i1 == i2))
         [SMTPat (expand k1 i1); SMTPat (expand k2 i2)]
@@ -362,7 +358,7 @@ val dh_pk_inj_lemma: sk1:bytes -> sk2:bytes ->
   Lemma (dh_pk sk1 == dh_pk sk2 ==> sk1 == sk2)
 /// Create a DH secret from a private and a public component.
 val dh: priv_component:bytes -> pub_component:bytes -> bytes
-val dh_inj_lemma (sk1 sk2 pk1 pk2:bytes) : // TODO this lemma is trivially true (as dh is a side-effect free function), couldn't we just remove it? Also: The name is misleading, DH is not injective (see next lemma).
+val dh_inj_lemma (sk1 sk2 pk1 pk2:bytes) :
   Lemma (sk1 == sk2 /\ pk1 == pk2 ==> dh sk1 pk1 == dh sk2 pk2)
 val dh_shared_secret_lemma: x:bytes -> y:bytes ->
   Lemma ((dh x (dh_pk y)) == (dh y (dh_pk x)))

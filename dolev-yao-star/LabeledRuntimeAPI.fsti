@@ -50,7 +50,6 @@ noeq type preds = {
   trace_preds: trace_preds global_usage
 }
 
-/// TODO DOC
 let event_pred_at (pr:preds) n p e = pr.trace_preds.can_trigger_event n p e
 
 let event_pred (pr:preds) n p e =
@@ -201,7 +200,6 @@ val get_last_state: #pr:preds -> p:principal ->
 ///
 /// Hence, the following session-based API can be used to get/set individual sessions within the
 /// local state.
-// TODO This API does not support proof of liveness (i.e., proving that a protocol run can finish)
 val new_session_number:
   #pr:preds ->  p:principal ->  LCrypto nat pr
   (requires fun t0 -> True)
@@ -239,6 +237,6 @@ val find_session:
   (requires fun t0 -> trace_len t0 == i)
   (ensures fun t0 r t1 -> t1 == t0 /\
                        (match r with
-                        | None -> True // TODO maybe expose non-existence of such a session?
-                        | Some (|si,vi,st|) -> f si vi st /\ // TODO maybe expose relation to get_session
+                        | None -> True
+                        | Some (|si,vi,st|) -> f si vi st /\
                                               pr.trace_preds.session_st_inv i p si vi st))

@@ -49,10 +49,6 @@ val secrecy_generic_label_lemma: #pr:preds -> b:bytes -> l:label ->
                                       is_labeled pr.global_usage (trace_len t0) b l /\
                                       Att.attacker_knows_at (trace_len t0) b) ==>
                                       (exists id. List.Tot.mem id ids /\ corrupt_at (trace_len t0) id))))
-// TODO: This lemma is still provable with contains_corrupt_id as a postcondition, but it becomes harder to get
-// information out of this (e.g. for the join lemmas). We should add more lemmas on contains_corrupt_id and/or
-// can_flow. In this particular case, that readers (l1 @ l2) can flow to (join (readers l1) (readers l2)).
-//                                      contains_corrupt_id cpred (trace_len t0) ids)))
 
 val secrecy_join_label_lemma: #pr:preds -> b:bytes -> LCrypto unit pr (requires (fun t0 -> True))
                               (ensures (fun t0 _ t1 -> t0 == t1 /\

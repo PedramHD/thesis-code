@@ -332,8 +332,8 @@ let rec label_to_list_int_inj (l1 l2:label) :
   | ReadableBy a, ReadableBy b -> id_list_to_list_int_inj a b
   | Join l1 l2, Join l1' l2' -> label_to_list_int_inj l1 l1'; label_to_list_int_inj l2 l2';
     append_list_lconcat_length_lemma (label_to_list_int l1) (label_to_list_int l2) (label_to_list_int l1') (label_to_list_int l2')
-  | Meet l1 l2, Meet l1' l2' -> label_to_list_int_inj l1 l1'; label_to_list_int_inj l2 l2'; 
-    append_list_lconcat_length_lemma (label_to_list_int l1) (label_to_list_int l2) (label_to_list_int l1') (label_to_list_int l2')  
+  | Meet l1 l2, Meet l1' l2' -> label_to_list_int_inj l1 l1'; label_to_list_int_inj l2 l2';
+    append_list_lconcat_length_lemma (label_to_list_int l1) (label_to_list_int l2) (label_to_list_int l1') (label_to_list_int l2')
   | _, _ -> ()
 
 instance label_comparable : comparable label = {
@@ -358,7 +358,7 @@ let id_leq_ id jd =
    | V i si vi, V j sj vj -> (i,si,vi) `leq` (j,sj,vj)
    | _ -> false
 
-instance ord_leq_id: ord_leq id = 
+instance ord_leq_id: ord_leq id =
   { leq_ = id_leq_
   ; refl = (fun _ -> ())
   ; total_ = (fun _ _ -> ())
@@ -370,7 +370,7 @@ instance ord_leq_id: ord_leq id =
 let readers (ids:list id) = ReadableBy (sort ids)
 
 // sanity checks
-let _ = 
+let _ =
     assert_norm (P "a" `leq` P "b")
   ; assert_norm (S "a" 0 `leq` V "b" 1 2)
   ; assert_norm (S "a" 0 `leq` V "a" 1 2)
@@ -389,10 +389,10 @@ let public = Public
 let join l1 l2 = if label_le l1 l2 then Join l1 l2 else Join l2 l1
 let meet l1 l2 = if label_le l1 l2 then Meet l1 l2 else Meet l2 l1
 
-let rec can_read i l = 
-  match l with 
+let rec can_read i l =
+  match l with
   | Public -> True
-  | ReadableBy ids -> List.Tot.mem i ids // TODO KB Why don't we use covers (or contains_id) here?
+  | ReadableBy ids -> List.Tot.mem i ids
   | Join l1 l2 -> can_read i l1 \/ can_read i l2
   | Meet l1 l2 -> can_read i l1 /\ can_read i l2
 
@@ -435,7 +435,6 @@ let rec can_flow_p (p:corrupt_pred) (ts:timestamp) (l1:label) (l2:label) =
 
 val corrupt_can_flow_to_public: p:corrupt_pred -> i:timestamp -> vid:list id ->
     Lemma (ensures (contains_corrupt_id p i vid 
-      // ==> can_flow_p p i (ReadableBy vid) public)) // should this be [readers vid] ? (CW)
       ==> can_flow_p p i (readers vid) public))
 let corrupt_can_flow_to_public p i ps = ()
 

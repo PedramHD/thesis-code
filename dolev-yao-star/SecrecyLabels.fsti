@@ -91,8 +91,6 @@ let includes_ids (haystack:list id) (needles:list id) = (forall v2. List.Tot.mem
 /// We maintain labels as abstract opaque values that are used only in (concrete) annotations and
 /// (ghost) specifications.
 ///
-/// Note: take care not to leak the concrete value of a label; do not allow an application to
-/// concretely compare labels, otherwise TODO DOC
 ///
 /// Abstract type and constructors for labels
 /// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -101,7 +99,7 @@ val label:Type0
 /// A list of versions allowed to read a value
 val readers: list id -> label
 
-val readers_permutation: l1 : list id -> l2: list id -> 
+val readers_permutation: l1 : list id -> l2: list id ->
   Lemma
     (requires is_permutation l1 l2)
     (ensures readers l1 == readers l2)
@@ -117,7 +115,7 @@ val readers_permutation_two (i j : id)
 /// connection.
 val public: label
 
-/// Label for unreadable values TODO DOC: Is this correct? When is this useful?
+/// Label for unreadable values
 let private_label = readers []
 
 /// Label for combined values: Union of the "intended audiences".
@@ -130,7 +128,7 @@ let join_opt l1 l2o = match l2o with | Some x -> join l1 x | None -> l1
 /// Label for combined values: Intersection of the "intended audiences".
 val meet: label -> label -> label
 
-/// Check whether a given ``id`` is in the "intended audience" of a label. TODO DOC is this correct?
+/// Check whether a given ``id`` is in the "intended audience" of a label.
 val can_read: id -> label -> Type0
 
 /// Properties of ``can_read`` and label constructors
@@ -150,7 +148,6 @@ noeq type corrupt_pred = {
   corrupt_id: timestamp -> id -> Type0;
   corrupt_id_later: t1:timestamp -> t2:timestamp ->
                     Lemma (forall x. corrupt_id t1 x /\ later_than t2 t1 ==> corrupt_id t2 x);
-/// TODO DOC: Is the following correct?
 /// Intuition for this property of ``corrupt_id``: Suppose we have a principal A, a nonce n which is
 /// somehow related to A (i.e., is labeled with ``readers [P A]``), and some corrupted
 /// session/version in A's state. Since we don't know whether n belongs to that corrupted version or
