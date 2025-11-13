@@ -1,5 +1,10 @@
 # DY*: A Modular Symbolic Verification Framework for Executable Cryptographic Protocol Code
 
+This repository contains the core DY* framework, together with the composable
+analysis methodology presented in "Layered Symbolic Security Analysis in DY*"
+(ESORICS'23). In addition, this repository contains a simple running example in
+the directory ``running-example``.
+
 ## Running the case studies
 
 The easiest way to try out the DY\* case studies quickly is to run
@@ -69,17 +74,3 @@ container.
 
 4. Run `./test.exe` to execute the test cases. This will print some
    intermediate information and at least one execution trace.
-
-
-## Signal (and other case studies)
-
-* The folder `signal` contains an F* implementation of the Signal
-  protocol as well as the specifications for security properties of
-  Signal and the required proof code.
-* The security properties of Signal are defined in
-  `Signal.SecurityProperties.fsti`.
-* The actual execution starts in `Signal.Test.fst`
-
-The other case studies follow a similar structure, except for the
-protocol executions which are invoked in the respective `Debug`
-modules.
