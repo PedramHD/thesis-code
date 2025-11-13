@@ -146,45 +146,6 @@ let path_integrity_helper_2_equal_authnconf principal_list secret_nonce (counter
     )
 #pop-options
 
-// ideally we want this combined lemma instead of the above two, but that increases verification time?!
-// #push-options "--z3rlimit 200 --max_fuel 4 --max_ifuel 2"
-// let path_integrity_helper_2_equal (cp: authenticated_channel_property) principal_list secret_nonce (counter:nat):
-//   LCrypto unit (pki (send_preds sr_preds))
-//   (requires ( fun t0 -> (
-//      (~ (principal_in_list_corrupted_and_nonce_flows_to_public (trace_len t0) principal_list secret_nonce)) /\
-//      List.Tot.Base.length principal_list > 0 /\
-//      counter < List.Tot.Base.length principal_list
-//   )))
-//   (ensures ( fun t0 _ t1 -> t0 == t1 /\ (
-//           forall (k_j:timestamp) (i:nat) . (i < counter) ==> (
-//             let p_i = List.Tot.Base.index principal_list i in
-//             let p_counter = List.Tot.Base.index principal_list counter in
-//             (
-//               (k_j < (trace_len t0) /\ did_event_occur_at k_j p_counter (processed_message_ cp principal_list secret_nonce counter))
-//               ==> (exists (k_i:timestamp) m_j. (k_i <= m_j) /\ (m_j <= k_j)
-//                    /\ (did_event_occur_at k_i p_i (processed_message_ cp principal_list secret_nonce i))
-//                    /\ ( let recv_msg = serialize_msg_raw (MsgWithCounter principal_list (counter-1) secret_nonce) in
-//                        match cp with
-//                        | AuthN -> exists signed_msg verif_idx. is_authenticated_message_sent_at m_j verif_idx recv_msg signed_msg
-//                        | AuthNConf -> is_authenticated_confidential_message_sent_at m_j recv_msg
-//                   )
-//               )
-//             )
-//           )
-//   )))
-//   =
-//     let t0 = get () in
-//     assert(forall (k_j:timestamp) (i:nat) . (i < counter) ==> (
-//       let p_i = List.Tot.Base.index principal_list i in
-//       let p_counter = List.Tot.Base.index principal_list counter in
-//       (
-//         (k_j < (trace_len t0) /\ did_event_occur_at k_j p_counter (processed_message_ cp principal_list secret_nonce counter))
-//         ==> (did_event_occur_before (trace_len t0) p_counter (processed_message_ cp principal_list secret_nonce counter) /\ later_than counter i)
-//       )
-//      )
-//     )
-// #pop-options
-
 
 let rec path_integrity_helper_2 (cp: authenticated_channel_property) principal_list secret_nonce (counter:nat):
   LCrypto unit (pki (send_preds sr_preds))
