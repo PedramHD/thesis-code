@@ -113,12 +113,12 @@ let nonce_is_secret (initiator:principal) (receiver:principal) (nonce:bytes) (ev
   assert(later_than current_trace_len event_idx);
   secrecy_lemma #(pki predicates) nonce
 
-let nonce_is_stored_in_responder_state state_vec si initiator shared_secret =
+let nonce_is_stored_in_receiver_state state_vec si initiator shared_secret =
   let session_bytes = state_vec.[si] in
     match LabeledPKI.parse_session_st session_bytes with
     | Success (APP labeledpki_session_bytes) -> (
       match Protocol.parse_session_st labeledpki_session_bytes with
-      | Success (ResponderReceivedMsg initiator_stored_in_state shared_secret_stored_in_state) -> (
+      | Success (ReceiverReceivedMsg initiator_stored_in_state shared_secret_stored_in_state) -> (
                   initiator_stored_in_state == initiator /\
                   shared_secret_stored_in_state == shared_secret
       )
@@ -126,12 +126,12 @@ let nonce_is_stored_in_responder_state state_vec si initiator shared_secret =
     )
     | _ -> False
 
-let nonce_stored_in_responder_state_is_secret (receiver:principal) (shared_secret:bytes) (initiator:principal) (state_vec:state_vec) (vvec:version_vec) (set_state_trace_idx:timestamp) (si:nat)
+let nonce_stored_in_receiver_state_is_secret (receiver:principal) (shared_secret:bytes) (initiator:principal) (state_vec:state_vec) (vvec:version_vec) (set_state_trace_idx:timestamp) (si:nat)
   : LCrypto unit (pki predicates)
   (requires ( fun t0 -> set_state_trace_idx < (trace_len t0) /\
     si < Seq.Base.length state_vec /\
     state_was_set_at set_state_trace_idx receiver vvec state_vec /\
-    nonce_is_stored_in_responder_state state_vec si initiator shared_secret
+    nonce_is_stored_in_receiver_state state_vec si initiator shared_secret
   ))
   (ensures ( fun t0 _ t1 ->
     t0 == t1 /\ (
@@ -158,7 +158,7 @@ let nonce_stored_in_responder_state_is_secret (receiver:principal) (shared_secre
       match LabeledPKI.parse_session_st session_bytes with
       | Success (APP labeledpki_session_bytes) -> (
         match Protocol.parse_session_st labeledpki_session_bytes with
-        | Success (ResponderReceivedMsg initiator_stored_in_state shared_secret_stored_in_state) -> (
+        | Success (ReceiverReceivedMsg initiator_stored_in_state shared_secret_stored_in_state) -> (
           assert(initiator_stored_in_state == initiator);
           assert(shared_secret_stored_in_state == shared_secret);
 
@@ -166,7 +166,7 @@ let nonce_stored_in_responder_state_is_secret (receiver:principal) (shared_secre
           assert(pr.trace_preds.session_st_inv set_state_trace_idx receiver si vvec.[si] state_vec.[si]);
           assert(pr.trace_preds.session_st_inv set_state_trace_idx receiver si vvec.[si] state_vec.[si]);
 
-          assert(valid_state_session gu set_state_trace_idx receiver (ResponderReceivedMsg initiator_stored_in_state shared_secret_stored_in_state));
+          assert(valid_state_session gu set_state_trace_idx receiver (ReceiverReceivedMsg initiator_stored_in_state shared_secret_stored_in_state));
 
           assert((corrupt_id set_state_trace_idx (P initiator_stored_in_state) ==> corrupt_id t_now (P initiator_stored_in_state)));
           assert((was_rand_generated_before set_state_trace_idx shared_secret (readers [P initiator; P receiver]) (nonce_usage "running_example_shared_secret"))

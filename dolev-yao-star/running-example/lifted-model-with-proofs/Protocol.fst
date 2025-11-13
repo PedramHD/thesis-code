@@ -58,7 +58,7 @@ let global_crypto_usage:global_usage = {
 
 noeq type example_session_st =
   |InitiatorSentMsg: recv:principal -> n:C.bytes -> example_session_st
-  |ResponderReceivedMsg: init:principal -> n:C.bytes -> example_session_st
+  |ReceiverReceivedMsg: init:principal -> n:C.bytes -> example_session_st
 
 
 let parse_session_st (session:C.bytes) : result example_session_st =
@@ -73,7 +73,7 @@ let parse_session_st (session:C.bytes) : result example_session_st =
       | Success p -> (
         match C.bytes_to_string tag_bytes with
         | Success "InitiatorSentMsgSession" -> Success (InitiatorSentMsg p nonce)
-        | Success "ResponderReceivedMsgSession" -> Success (ResponderReceivedMsg p nonce)
+        | Success "ReceiverReceivedMsgSession" -> Success (ReceiverReceivedMsg p nonce)
         | _ -> Error "wrong session type"
       )
     )
@@ -123,7 +123,7 @@ let event_predicate (i:nat) p (e:event) : prop =
 let serialize_session_st (session:example_session_st) : C.bytes =
   match session with
   |InitiatorSentMsg receiver nonce -> C.concat (C.string_to_bytes "InitiatorSentMsgSession") (C.concat (C.string_to_bytes receiver) nonce)
-  |ResponderReceivedMsg initiator nonce -> C.concat (C.string_to_bytes "ResponderReceivedMsgSession") (C.concat (C.string_to_bytes initiator) nonce)
+  |ReceiverReceivedMsg initiator nonce -> C.concat (C.string_to_bytes "ReceiverReceivedMsgSession") (C.concat (C.string_to_bytes initiator) nonce)
 
 
 let parse_serialize_session_st_lemma (st:example_session_st) :
@@ -158,7 +158,7 @@ let serialize_parse_session_st_lemma (b:C.bytes) :
           (
           match C.bytes_to_string tag_bytes with
           | Success "InitiatorSentMsgSession" -> ()
-          | Success "ResponderReceivedMsg" -> ()
+          | Success "ReceiverReceivedMsg" -> ()
           | _ -> ()
           )
         )
@@ -168,7 +168,7 @@ let serialize_parse_session_st_lemma (b:C.bytes) :
 let valid_state_session (gu:global_usage) (i:timestamp) (p:principal) (st:example_session_st): prop =
   match st with
   | (InitiatorSentMsg receiver shared_secret) -> was_rand_generated_before i shared_secret (readers [P p; P receiver]) (C.nonce_usage "running_example_shared_secret")
-  | (ResponderReceivedMsg initiator shared_secret) -> (corrupt_id i (P initiator) /\ is_publishable gu i shared_secret) \/ was_rand_generated_before i shared_secret (readers [P initiator; P p]) (C.nonce_usage "running_example_shared_secret")
+  | (ReceiverReceivedMsg initiator shared_secret) -> (corrupt_id i (P initiator) /\ is_publishable gu i shared_secret) \/ was_rand_generated_before i shared_secret (readers [P initiator; P p]) (C.nonce_usage "running_example_shared_secret")
 
 
 let labeled_serialize_session_st (gu:global_usage) (i:timestamp) (p:principal) (si:nat) (vi:nat) (session:example_session_st{valid_state_session gu i p session}) : serialized_st:msg gu i (readers [V p si vi]) {serialized_st == serialize_session_st session}=
@@ -178,10 +178,10 @@ let labeled_serialize_session_st (gu:global_usage) (i:timestamp) (p:principal) (
     assert(can_flow i (get_label gu.key_usages nonce) (readers [V p si vi]));
     concat (string_to_bytes #gu #i "InitiatorSentMsgSession") (concat (string_to_bytes #gu #i receiver) nonce)
   )
-  |ResponderReceivedMsg initiator nonce -> (
+  |ReceiverReceivedMsg initiator nonce -> (
     rand_is_secret #gu #i #(readers [P initiator; P p]) #(C.nonce_usage "running_example_shared_secret") nonce;
     assert(corrupt_id i (P initiator) \/ can_flow i (get_label gu.key_usages nonce) (readers [V p si vi]));
-    concat (string_to_bytes #gu #i "ResponderReceivedMsgSession") (concat (string_to_bytes #gu #i initiator) nonce)
+    concat (string_to_bytes #gu #i "ReceiverReceivedMsgSession") (concat (string_to_bytes #gu #i initiator) nonce)
   )
 
 
@@ -250,11 +250,11 @@ let initiator_encrypt_then_sign_message
 
   assert(exists sk. pub_key_of_b == C.pk sk);
 
-    assert(exists  enc_priv_key'.
-       get_label default_key_usages enc_priv_key' == (readers [P receiver]) /\
-       get_usage default_key_usages enc_priv_key' == Some (C.pke_usage "enc_key") /\
-       initiator_bytes_nonce == C.concat (C.string_to_bytes initiator) shared_secret /\
-       was_rand_generated_before t1 shared_secret (readers [P initiator; P receiver]) (C.nonce_usage "running_example_shared_secret")
+  assert(exists  enc_priv_key'.
+    get_label default_key_usages enc_priv_key' == (readers [P receiver]) /\
+    get_usage default_key_usages enc_priv_key' == Some (C.pke_usage "enc_key") /\
+    initiator_bytes_nonce == C.concat (C.string_to_bytes initiator) shared_secret /\
+    was_rand_generated_before t1 shared_secret (readers [P initiator; P receiver]) (C.nonce_usage "running_example_shared_secret")
   );
 
   assert(pke_predicate t1 "enc_key" pub_key_of_b initiator_bytes_nonce);
@@ -411,27 +411,30 @@ let receiver_process_message
   | Error _ -> error "cannot split the message into ciphertext and signature tag"
   | Success (ciphertext, signature) -> (
     if(verify #global_crypto_usage #t_now #public #public verification_key_of_a ciphertext signature) then (
-      assert(can_flow t_now (readers [P initiator]) public \/ sign_pred global_crypto_usage.usage_preds t_now "running_example_sig_key" verification_key_of_a ciphertext);
-      assert(corrupt_id t_now (P initiator) \/ sign_pred global_crypto_usage.usage_preds t_now "running_example_sig_key" verification_key_of_a ciphertext);
+      assert(can_flow t_now (readers [P initiator]) public \/
+        sign_pred global_crypto_usage.usage_preds t_now "running_example_sig_key" verification_key_of_a ciphertext);
+      assert(corrupt_id t_now (P initiator) \/
+        sign_pred global_crypto_usage.usage_preds t_now "running_example_sig_key" verification_key_of_a ciphertext);
 
       match pke_dec #global_crypto_usage #t_now #(readers [P receiver]) priv_key_of_b ciphertext with
       | Error _ -> error "cannot decrypt message"
       | Success plaintext ->
-        assert(forall s. is_private_dec_key global_crypto_usage t_now priv_key_of_b (readers [P receiver]) s ==> (is_publishable global_crypto_usage t_now plaintext \/ pke_pred global_crypto_usage.usage_preds t_now s (C.pk priv_key_of_b) plaintext));
+        assert(forall s. is_private_dec_key global_crypto_usage t_now priv_key_of_b (readers [P receiver]) s ==>
+          (is_publishable global_crypto_usage t_now plaintext \/ pke_pred global_crypto_usage.usage_preds t_now s
+          (C.pk priv_key_of_b) plaintext));
         assert(is_private_dec_key global_crypto_usage t_now priv_key_of_b (readers [P receiver]) "enc_key");
-        assert(is_publishable global_crypto_usage t_now plaintext \/ pke_pred global_crypto_usage.usage_preds t_now "enc_key" (C.pk priv_key_of_b) plaintext);
+        assert(is_publishable global_crypto_usage t_now plaintext \/
+          pke_pred global_crypto_usage.usage_preds t_now "enc_key" (C.pk priv_key_of_b) plaintext);
 
         match split plaintext with
         | Error _ -> error "cannot split plaintext"
         | Success (initiator_bytes, shared_secret) -> (
 
-              C.split_based_on_split_len_prefixed_lemma plaintext;
-              assert(C.is_succ2 (C.split_len_prefixed 4 plaintext) initiator_bytes shared_secret);
-              splittable_term_publishable_implies_components_publishable_forall global_crypto_usage;
-              assert(is_publishable global_crypto_usage t_now plaintext ==> is_publishable global_crypto_usage t_now shared_secret);
-         (
-
-
+           C.split_based_on_split_len_prefixed_lemma plaintext;
+           assert(C.is_succ2 (C.split_len_prefixed 4 plaintext) initiator_bytes shared_secret);
+           splittable_term_publishable_implies_components_publishable_forall global_crypto_usage;
+           assert(is_publishable global_crypto_usage t_now plaintext ==> is_publishable global_crypto_usage t_now shared_secret);
+          (
           match bytes_to_string initiator_bytes with
           | Error _ -> error "cannot parse initiator information in plaintext"
           | Success initiator_from_plaintext -> (
@@ -439,14 +442,16 @@ let receiver_process_message
             else (
               let t_now = global_timestamp () in
 
-              assert(corrupt_id t_now (P initiator) \/ sign_pred global_crypto_usage.usage_preds t_now "running_example_sig_key" verification_key_of_a ciphertext);
-              assert(is_publishable global_crypto_usage t_now plaintext \/ pke_pred global_crypto_usage.usage_preds t_now "enc_key" (C.pk priv_key_of_b) plaintext);
+              assert(corrupt_id t_now (P initiator) \/
+                sign_pred global_crypto_usage.usage_preds t_now "running_example_sig_key" verification_key_of_a ciphertext);
+              assert(is_publishable global_crypto_usage t_now plaintext \/
+                pke_pred global_crypto_usage.usage_preds t_now "enc_key" (C.pk priv_key_of_b) plaintext);
+
               assert(can_flow t_now (get_label global_crypto_usage.key_usages plaintext) (readers [P receiver]));
 
-
               assert(sign_pred global_crypto_usage.usage_preds t_now "running_example_sig_key" verification_key_of_a ciphertext ==>
-                (exists t_earlier. later_than t_now t_earlier /\ sign_predicate t_earlier "running_example_sig_key" verification_key_of_a ciphertext)
-                );
+                (exists t_earlier. later_than t_now t_earlier /\ sign_predicate t_earlier "running_example_sig_key"
+                  verification_key_of_a ciphertext));
 
               sign_predicate_true_later_forall verification_key_of_a ciphertext;
 
@@ -460,15 +465,28 @@ let receiver_process_message
                 sign_pred global_crypto_usage.usage_preds t_now "running_example_sig_key" verification_key_of_a ciphertext
                 );
 
+              //combining the guarantees from the successful decryption and signature verification
+              assert(
+                (corrupt_id t_now (P initiator) \/
+                  sign_pred global_crypto_usage.usage_preds t_now "running_example_sig_key" verification_key_of_a ciphertext)
+                /\
+                (is_publishable global_crypto_usage t_now plaintext \/
+                    sign_pred global_crypto_usage.usage_preds t_now "running_example_sig_key" verification_key_of_a ciphertext)
+                );
+
+              assert(
+                (corrupt_id t_now (P initiator) /\ is_publishable global_crypto_usage t_now plaintext) \/
+                  sign_pred global_crypto_usage.usage_preds t_now "running_example_sig_key" verification_key_of_a ciphertext);
+
 
               assert(is_private_dec_key global_crypto_usage t_now priv_key_of_b (readers [P receiver]) "enc_key");
 
               readers_is_injective receiver;
 
               assert(corrupt_id t_now (P initiator) \/
-                  (
-                      was_rand_generated_before t_now shared_secret (readers [P initiator_from_plaintext; P receiver]) (C.nonce_usage "running_example_shared_secret")
-                  )
+                (
+                  was_rand_generated_before t_now shared_secret (readers [P initiator_from_plaintext; P receiver]) (C.nonce_usage "running_example_shared_secret")
+                )
               );
 
 
@@ -503,7 +521,7 @@ let receiver_receive_message (receiver:principal) (message_idx:nat) :
   LabeledPKI.trigger_event #predicates receiver received_event;
 
   let now = global_timestamp () in
-  let session_state = ResponderReceivedMsg sender_from_message_entry shared_secret in
+  let session_state = ReceiverReceivedMsg sender_from_message_entry shared_secret in
   let si = LabeledPKI.new_session_number #predicates receiver in
   assert(corrupt_id now (P sender_from_message_entry) \/ was_rand_generated_before now shared_secret (readers [P sender_from_message_entry; P receiver]) (C.nonce_usage "running_example_shared_secret"));
   assert(valid_state_session global_crypto_usage now receiver session_state);

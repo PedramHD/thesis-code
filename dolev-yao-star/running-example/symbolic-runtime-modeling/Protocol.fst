@@ -14,7 +14,7 @@ let create_receive_event (receiver:principal) (initiator:principal) (n:C.bytes) 
 
 noeq type example_session_st =
   |InitiatorSentMsg: recv:principal -> n:C.bytes -> example_session_st
-  |ResponderReceivedMsg: init:principal -> n:C.bytes -> example_session_st
+  |ReceiverReceivedMsg: init:principal -> n:C.bytes -> example_session_st
 
 val parse_session_st: (session:C.bytes) -> result example_session_st
 
@@ -30,7 +30,7 @@ let parse_session_st session : result example_session_st =
       | Success p -> (
         match C.bytes_to_string tag_bytes with
         | Success "InitiatorSentMsgSession" -> Success (InitiatorSentMsg p nonce)
-        | Success "ResponderReceivedMsgSession" -> Success (ResponderReceivedMsg p nonce)
+        | Success "ReceiverReceivedMsgSession" -> Success (ReceiverReceivedMsg p nonce)
         | _ -> Error "wrong session type"
       )
     )
@@ -42,8 +42,8 @@ let serialize_session_st session : C.bytes =
   match session with
   |InitiatorSentMsg receiver nonce ->
     C.concat (C.string_to_bytes "InitiatorSentMsgSession") (C.concat (C.string_to_bytes receiver) nonce)
-  |ResponderReceivedMsg initiator nonce ->
-    C.concat (C.string_to_bytes "ResponderReceivedMsgSession") (C.concat (C.string_to_bytes initiator) nonce)
+  |ReceiverReceivedMsg initiator nonce ->
+    C.concat (C.string_to_bytes "ReceiverReceivedMsgSession") (C.concat (C.string_to_bytes initiator) nonce)
 
 let parse_serialize_session_st_lemma (st:example_session_st) :
     Lemma (
@@ -147,7 +147,7 @@ let receiver_receive_message (receiver:principal) (message_idx:nat) :
   let shared_secret = receiver_process_message receiver sender_from_message_entry message in
   let (received_event:event) = create_receive_event receiver sender_from_message_entry shared_secret in
   trigger_event receiver received_event;
-  let session_state = ResponderReceivedMsg sender_from_message_entry shared_secret in
+  let session_state = ReceiverReceivedMsg sender_from_message_entry shared_secret in
   let si = SimplePKI.new_session_number receiver in
   let serialized_st = (serialize_session_st session_state) in
   SimplePKI.new_session receiver si 0 serialized_st
